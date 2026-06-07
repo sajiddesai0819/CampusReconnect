@@ -716,9 +716,17 @@ input[name="item-status"]:checked + label.found {
     /* Hide specific buttons from the bottom bar to keep it uncluttered */
     #nav-reports, 
     #nav-admin, 
-    #nav-how {
+    #nav-how,
+    #nav-search {
         display: none !important;
     }
+
+    /* Distribute the remaining 5 buttons evenly and center the Plus button */
+    #nav-home { order: 1 !important; }
+    #nav-lost { order: 2 !important; }
+    #nav-report { order: 3 !important; } /* Plus icon in dead center */
+    #nav-found { order: 4 !important; }
+    #nav-profile { order: 5 !important; }
 
     /* Disable pointer interactions on the 3D Orb to allow swiping to scroll naturally */
     #three-canvas {

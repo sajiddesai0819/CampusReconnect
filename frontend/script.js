@@ -1018,6 +1018,10 @@ document.getElementById('profile-btn-admin').addEventListener('click', () => {
     closeModal('profileModal');
     document.getElementById('nav-admin').click();
 });
+document.getElementById('profile-btn-search').addEventListener('click', () => {
+    closeModal('profileModal');
+    openModal('searchModal');
+});
 document.getElementById('profile-btn-how').addEventListener('click', () => {
     closeModal('profileModal');
     openModal('howModal');
