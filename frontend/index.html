@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Reconnect - Focus Rail Hub</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Three.js CDN for 3D Orb -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Link to external stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    
+</head>
+<body class="bg-slate-900 h-screen w-full">
+
+    <!-- ===== Background Canvas ===== -->
+    <canvas id="connection-canvas"></canvas>
+
+    <!-- ===== Floating App Container ===== -->
+    <div id="app-container" class="z-10 rounded-xl shadow-2xl shadow-black/50 overflow-hidden">
+        
+        <!-- ===== Vertical Nav Rail ===== -->
+        <nav id="nav-rail">
+            <div class="flex flex-col items-center space-y-4">
+                <!-- Home -->
+                <button id="nav-home" class="nav-button active" data-panel="homePanel">
+                    <i data-lucide="home" class="w-6 h-6"></i>
+                    <span class="tooltip">Home</span>
+                </button>
+                
+                <!-- Lost -->
+                <button id="nav-lost" class="nav-button" data-panel="lostPanel">
+                    <i data-lucide="search" class="w-6 h-6"></i>
+                    <span class="tooltip">Lost Items</span>
+                </button>
+                
+                <!-- Found -->
+                <button id="nav-found" class="nav-button" data-panel="foundPanel">
+                    <i data-lucide="package-check" class="w-6 h-6"></i>
+                    <span class="tooltip">Found Items</span>
+                </button>
+                
+                <!-- My Reports -->
+                <button id="nav-reports" class="nav-button hidden" data-panel="reportsPanel">
+                    <i data-lucide="file-check" class="w-6 h-6"></i>
+                    <span class="tooltip">My Reports</span>
+                </button>
+                
+                <!-- Divider -->
+                <div class="h-px w-8 bg-slate-700 my-2"></div>
+                
+                <!-- Report -->
+                <button id="nav-report" class="nav-button bg-lime-500 text-black hover:bg-lime-400">
+                    <i data-lucide="plus" class="w-6 h-6"></i>
+                    <span class="tooltip">Report an Item</span>
+                </button>
+                
+                <!-- Search -->
+                <button id="nav-search" class="nav-button">
+                    <i data-lucide="search-code" class="w-6 h-6"></i>
+                    <span class="tooltip">Advanced Search</span>
+                </button>
+                
+                <!-- NEW: Admin Panel (Hidden by default) -->
+                <button id="nav-admin" class="nav-button hidden" data-panel="adminPanel">
+                    <i data-lucide="shield" class="w-6 h-6 text-red-400"></i>
+                    <span class="tooltip">Admin Panel</span>
+                </button>
+            </div>
+            
+            <!-- Bottom Buttons -->
+            <div class="mt-auto mb-4 flex flex-col items-center space-y-4">
+                <!-- Profile Button -->
+                <button id="nav-profile" class="nav-button">
+                    <i data-lucide="user" class="w-6 h-6"></i>
+                    <span class="tooltip">Login / Register</span>
+                </button>
+                <!-- How It Works -->
+                <button id="nav-how" class="nav-button">
+                    <i data-lucide="help-circle" class="w-6 h-6"></i>
+                    <span class="tooltip">How It Works</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- ===== Main Content Area ===== -->
+        <main id="content-area">
+            
+            <!-- ===== Home Panel ===== -->
+            <div id="homePanel" class="content-panel content-scrollbar active">
+                <h2 class="text-3xl font-extrabold text-white mb-2">Campus Reconnect</h2>
+                <p class="text-lg text-gray-400 mb-6">Welcome to the Connection Hub</p>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column: 3D Orb & Stats -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- 3D Orb -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-300 uppercase tracking-wider mb-3">Connection Orb</h3>
+                            <div id="three-canvas-container" class="aspect-video max-h-[300px] rounded-xl">
+                                <canvas id="three-canvas"></canvas>
+                            </div>
+                            <p class="text-sm text-gray-500 text-center mt-2">Click and drag to rotate the orb</p>
+                        </div>
+                        
+                        <!-- Stats -->
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="bg-slate-800/50 border border-slate-700 p-6 rounded-xl text-center">
+                                <p class="text-sm font-bold text-amber-400 uppercase tracking-widest">Items Lost</p>
+                                <p id="stats-lost" class="text-6xl font-extrabold text-glow-amber">0</p>
+                            </div>
+                            <div class="bg-slate-800/50 border border-slate-700 p-6 rounded-xl text-center">
+                                <p class="text-sm font-bold text-lime-400 uppercase tracking-widest">Items Found</p>
+                                <p id="stats-found" class="text-6xl font-extrabold text-glow-lime">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column: Live Activity -->
+                    <div class="lg:col-span-1">
+                        <h3 class="text-lg font-semibold text-gray-300 uppercase tracking-wider mb-3">Live Activity</h3>
+                        <div class="h-[500px] p-4 bg-slate-900/60 rounded-lg overflow-hidden relative border border-slate-700">
+                            <ul id="activity-feed" class="relative space-y-3 content-scrollbar h-full overflow-y-auto pr-2">
+                                <!-- Activity items will be dynamically inserted here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Lost Items Panel ===== -->
+            <div id="lostPanel" class="content-panel content-scrollbar">
+                <h2 class="text-3xl font-extrabold text-amber-400 mb-6">Lost Items</h2>
+                <div id="lost-items-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- Lost items will be dynamically inserted here -->
+                </div>
+                <p id="no-lost-items" class="text-slate-400 italic hidden">No lost items have been reported yet.</p>
+            </div>
+
+            <!-- ===== Found Items Panel ===== -->
+            <div id="foundPanel" class="content-panel content-scrollbar">
+                <h2 class="text-3xl font-extrabold text-lime-400 mb-6">Found Items</h2>
+                <div id="found-items-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- Found items will be dynamically inserted here -->
+                </div>
+                <p id="no-found-items" class="text-slate-400 italic hidden">No found items have been reported yet.</p>
+            </div>
+            
+            <!-- ===== REWORKED: My Reports Panel ===== -->
+            <div id="reportsPanel" class="content-panel content-scrollbar">
+                <h2 class="text-3xl font-extrabold text-white mb-6">My Reported Items</h2>
+                
+                <div id="my-reports-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- User's own reported items (public, pending, claimed) will be dynamically inserted here -->
+                </div>
+                <p id="no-my-reports" class="text-slate-400 italic hidden">You have not reported any items.</p>
+            </div>
+            
+            <!-- ===== NEW: Admin Panel ===== -->
+            <div id="adminPanel" class="content-panel content-scrollbar">
+                <h2 class="text-3xl font-extrabold text-white mb-6 text-glow-red">Admin Panel</h2>
+                
+                <!-- Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="admin-stat-card border-l-lime-500">
+                        <div>
+                            <p class="text-sm font-bold text-slate-400 uppercase tracking-widest">Total Users</p>
+                            <p id="admin-stats-users" class="text-4xl font-extrabold text-white">0</p>
+                        </div>
+                        <i data-lucide="users" class="w-10 h-10 text-lime-500"></i>
+                    </div>
+                    <div class="admin-stat-card border-l-amber-500">
+                        <div>
+                            <p class="text-sm font-bold text-slate-400 uppercase tracking-widest">Total Items</p>
+                            <p id="admin-stats-items" class="text-4xl font-extrabold text-white">0</p>
+                        </div>
+                        <i data-lucide="package" class="w-10 h-10 text-amber-500"></i>
+                    </div>
+                    <div class="admin-stat-card border-l-red-500">
+                        <div>
+                            <p class="text-sm font-bold text-slate-400 uppercase tracking-widest">Pending Claims</p>
+                            <p id="admin-stats-claims" class="text-4xl font-extrabold text-white">0</p>
+                        </div>
+                        <i data-lucide="file-clock" class="w-10 h-10 text-red-500"></i>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex border-b border-slate-700 mb-6">
+                    <button class="admin-tab-btn active" data-tab="admin-users-content">Users</button>
+                    <button class="admin-tab-btn" data-tab="admin-items-content">Items</button>
+                </div>
+
+                <!-- Admin Tab Content -->
+                <div id="admin-users-content" class="admin-tab-content max-h-[40vh] overflow-y-auto content-scrollbar pr-2">
+                    <div class="bg-slate-900/50 border border-slate-700 rounded-lg overflow-hidden">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>USN</th>
+                                    <th>Reports</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-users-table-body">
+                                <!-- Admin users list -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="admin-items-content" class="admin-tab-content hidden max-h-[40vh] overflow-y-auto content-scrollbar pr-2">
+                     <div class="bg-slate-900/50 border border-slate-700 rounded-lg overflow-hidden">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Owner</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-items-table-body">
+                                <!-- Admin items list -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+        
+    </div>
+    <!-- ===== End Floating App Container ===== -->
+
+
+    <!-- ===== Modals ===== -->
+
+    <!-- ===== Review Claim Modal ===== -->
+    <div id="reviewModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-70 p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div id="reviewModalContent" class="modal-content dark-modal-content text-slate-100 w-full max-w-lg p-0 rounded-xl shadow-2xl transform transition-all duration-300 scale-95 opacity-0 border border-slate-700 overflow-hidden">
+            <!-- Modal Elements -->
+            <div class="scanline"></div>
+            <div class="corner-bracket top-left"></div>
+            <div class="corner-bracket top-right"></div>
+            <div class="corner-bracket bottom-left"></div>
+            <div class="corner-bracket bottom-right"></div>
+
+            <!-- Close Button -->
+            <button class="close-modal-btn absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition-colors duration-200 z-20">
+                <i data-lucide="x" class="w-7 h-7"></i>
+            </button>
+            
+            <div class="p-6 sm:p-8 z-10 relative">
+                <h2 class="text-3xl font-bold text-white mb-8 text-center text-glow-amber">Review Claim</h2>
+                
+                <p class="text-center text-slate-300 mb-4">A user has claimed your item:</p>
+                <h3 id="review-item-title" class="text-xl font-bold text-center text-white mb-6"></h3>
+
+                <!-- Claimer Info -->
+                <div class="flex items-center space-x-4 bg-slate-900/50 p-4 rounded-lg border border-slate-700 mb-6">
+                    <div id="review-pfp-claimer" class="profile-pic w-16 h-16" style="border-width: 2px;">
+                        <i data-lucide="user" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <span class="text-sm text-slate-400">Claimer</span>
+                        <p id="review-name-claimer" class="text-lg font-bold text-white">-</p>
+                        <p id="review-email-claimer" class="text-sm text-amber-400">-</p>
+                    </div>
+                </div>
+                
+                <!-- Verification Details -->
+                <label class="text-sm font-bold text-slate-400 uppercase tracking-wider">Verification Detail Provided:</label>
+                <div id="review-verification-text" class="mt-2 mb-8">
+                    -
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="review-btn-deny" class="w-full flex items-center justify-center px-6 py-3 border border-red-500 text-red-400 font-medium rounded-md hover:bg-red-500 hover:text-black transition-all duration-300">
+                        <i data-lucide="x-circle" class="w-5 h-5 mr-2"></i>
+                        Deny Claim
+                    </button>
+                    <button id="review-btn-confirm" class="w-full flex items-center justify-center px-6 py-3 border border-lime-500 text-lime-400 font-medium rounded-md hover:bg-lime-500 hover:text-black transition-all duration-300">
+                        <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i>
+                        Confirm Connection
+                    </button>
+                </div>
+                <input type="hidden" id="review-claim-id">
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Claim Item Modal ("Connection Hub") ===== -->
+    <div id="claimModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-70 p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div id="claimModalContent" class="modal-content dark-modal-content text-slate-100 w-full max-w-lg p-0 rounded-xl shadow-2xl transform transition-all duration-300 scale-95 opacity-0 border border-slate-700 overflow-hidden">
+            <!-- Modal Elements -->
+            <div class="scanline"></div>
+            <div class="corner-bracket top-left"></div>
+            <div class="corner-bracket top-right"></div>
+            <div class="corner-bracket bottom-left"></div>
+            <div class="corner-bracket bottom-right"></div>
+
+            <!-- Close Button -->
+            <button class="close-modal-btn absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition-colors duration-200 z-20">
+                <i data-lucide="x" class="w-7 h-7"></i>
+            </button>
+            
+            <div class="p-6 sm:p-8 z-10 relative">
+                
+                <!-- Main Form Panel -->
+                <div id="claim-panel-main">
+                    <h2 class="text-3xl font-bold text-white mb-8 text-center text-glow-lime">Connection Hub</h2>
+                    
+                    <!-- Connection Visual -->
+                    <div class="flex items-center justify-between mb-8">
+                        <!-- Claimer (You) -->
+                        <div class="flex flex-col items-center text-center">
+                            <div id="claim-pfp-claimer" class="profile-pic mb-2" style="border-color: #f59e0b;">
+                                <i data-lucide="user" class="w-10 h-10"></i>
+                            </div>
+                            <span class="font-bold text-amber-400">You (Claimer)</span>
+                            <span id="claim-name-claimer" class="text-sm text-slate-300">-</span>
+                        </div>
+                        
+                        <!-- Line -->
+                        <div class="connection-line"></div>
+                        <i data-lucide="handshake" class="w-8 h-8 text-white -mx-3 z-10 bg-slate-800 p-1 rounded-full"></i>
+                        <div class="connection-line"></div>
+                        
+                        <!-- Owner -->
+                        <div class="flex flex-col items-center text-center">
+                            <div id="claim-pfp-owner" class="profile-pic mb-2">
+                                <i data-lucide="user" class="w-10 h-10"></i>
+                            </div>
+                            <span class="font-bold text-lime-400">Owner</span>
+                            <span id="claim-name-owner" class="text-sm text-slate-300">-</span>
+                        </div>
+                    </div>
+                    
+                    <h3 id="claim-item-title" class="text-xl font-bold text-center text-white mb-2"></h3>
+                    <p id="claim-action-text" class="text-center text-slate-400 mb-6"></p>
+
+                    <!-- Claim Form -->
+                    <form id="claim-form" class="space-y-6">
+                        <input type="hidden" id="claim-item-id">
+                        <!-- Verification field (hidden by default) -->
+                        <div id="claim-verification-group" class="hidden floating-label-group">
+                            <textarea id="claim-verification" class="floating-input h-24 resize-none" placeholder=" " rows="3"></textarea>
+                            <label for="claim-verification" class="floating-label">Verification Detail</label>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit" id="claim-submit-btn" class="w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-black bg-lime-500 hover:bg-lime-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 transition-all duration-200">
+                                Confirm Connection
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Connecting Panel -->
+                <div id="claim-panel-loading" class="hidden text-center py-12">
+                    <div class="spinner w-16 h-16 mx-auto mb-6"></div>
+                    <h2 class="text-3xl font-bold text-white mt-6 text-glow-lime">Submitting Claim...</h2>
+                    <p class="text-xl text-slate-300 mt-2">Notifying owner...</p>
+                </div>
+
+                <!-- Success Panel -->
+                <div id="claim-panel-success" class="hidden text-center py-12">
+                    <div id="claim-success-panel" class="w-24 h-24 rounded-full bg-lime-500/20 flex items-center justify-center mx-auto border-4 border-lime-500">
+                        <i data-lucide="check-circle" class="w-16 h-16 text-lime-400 text-glow-lime"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-white mt-6">Claim Submitted!</h2>
+                    <p class="text-xl text-slate-300 mt-2">The owner has been notified and will review your claim.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ===== Report Item Modal (Dark, "Out of the Box") ===== -->
+    <div id="reportModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-70 p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div id="reportModalContent" class="modal-content dark-modal-content text-slate-100 w-full max-w-lg p-0 rounded-xl shadow-2xl transform transition-all duration-300 scale-95 opacity-0 border border-slate-700 overflow-hidden">
+            <!-- Modal Elements -->
+            <div class="scanline"></div>
+            <div class="corner-bracket top-left"></div>
+            <div class="corner-bracket top-right"></div>
+            <div class="corner-bracket bottom-left"></div>
+            <div class="corner-bracket bottom-right"></div>
+
+            <!-- Close Button -->
+            <button class="close-modal-btn absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition-colors duration-200 z-20">
+                <i data-lucide="x" class="w-7 h-7"></i>
+            </button>
+            
+            <div class="p-6 sm:p-8 z-10 relative">
+                <!-- Modal Header -->
+                <h2 class="text-3xl font-bold text-white mb-8 text-center text-glow-lime">Report Hub</h2>
+                
+                <!-- Modal Form -->
+                <form id="item-report-form" class="space-y-6">
+                    
+                    <!-- Image Upload Dropzone -->
+                    <!-- *** THIS IS THE FIX: Added name="item-image-input" *** -->
+                    <input type="file" id="report-image-input" name="item-image-input" class="hidden" accept="image/*">
+                    <div id="report-image-dropzone">
+                        <div id="dropzone-prompt" class="flex flex-col items-center text-slate-400">
+                            <i data-lucide="upload-cloud" class="w-10 h-10 mb-2"></i>
+                            <span class="font-semibold">Upload an Image</span>
+                            <span class="text-sm">Drag & drop or click to select</span>
+                        </div>
+                        <div id="dropzone-analyzing" class="hidden flex-col items-center text-lime-400">
+                            <div class="spinner mb-3"></div>
+                            <span class="font-semibold text-glow-lime">Analyzing Image...</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Redesigned Status Buttons -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="radio" id="status-lost" name="item-status" value="lost" class="hidden" required>
+                        <label for="status-lost" class="report-status-btn lost">
+                            <i data-lucide="search" class="w-5 h-5 mr-2"></i>
+                            I Lost It
+                        </label>
+                        
+                        <input type="radio" id="status-found" name="item-status" value="found" class="hidden" required>
+                        <label for="status-found" class="report-status-btn found">
+                            <i data-lucide="package-check" class="w-5 h-5 mr-2"></i>
+                            I Found It
+                        </label>
+                    </div>
+
+                    <!-- "Out of the Box" Form Fields -->
+                    <div class="floating-label-group">
+                        <input type="text" id="item-title" name="item-title" class="floating-input" placeholder=" " required>
+                        <label for="item-title" class="floating-label">Item Name (e.g., Black iPhone 14)</label>
+                    </div>
+                    
+                    <div class="floating-label-group">
+                        <input type="text" id="item-location" name="item-location" class="floating-input" placeholder=" " required>
+                        <label for="item-location" class="floating-label">Location (e.g., Main Library, 2nd Floor)</label>
+                    </div>
+
+                    <div class="floating-label-group">
+                        <textarea id="item-description" name="item-description" class="floating-input h-32 resize-none" placeholder=" " rows="4"></textarea>
+                        <label for="item-description" class="floating-label">Description (AI-generated)</label>
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit" class="w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-black bg-lime-500 hover:bg-lime-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 transition-all duration-200">
+                            Submit Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== NEW: Search Modal ("Out of the Box") ===== -->
+    <div id="searchModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-70 p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div id="searchModalContent" class="modal-content dark-modal-content text-slate-100 w-full max-w-2xl p-0 rounded-xl shadow-2xl transform transition-all duration-300 scale-95 opacity-0 border border-slate-700 overflow-hidden">
+            <!-- Modal Elements -->
+            <div class="scanline"></div>
+            <div class="corner-bracket top-left"></div>
+            <div class="corner-bracket top-right"></div>
+            <div class="corner-bracket bottom-left"></div>
+            <div class="corner-bracket bottom-right"></div>
+
+            <!-- Close Button -->
+            <button class="close-modal-btn absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition-colors duration-200 z-20">
+                <i data-lucide="x" class="w-7 h-7"></i>
+            </button>
+            
+            <div class="p-6 sm:p-8 z-10 relative">
+                <!-- Modal Header -->
+                <h2 class="text-3xl font-bold text-white mb-8 text-center text-glow-lime">Search Hub</h2>
+                
+                <!-- Search Input -->
+                <div class="relative mb-6">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+                        <i data-lucide="search" class="h-5 w-5 text-slate-400"></i>
+                    </div>
+                    <input type="text" id="search-input" placeholder="Search by item name, description, or location..." class="w-full pl-12 pr-4 py-3 text-lg bg-slate-900/80 border-2 border-slate-700 rounded-lg outline-none transition-all duration-200 focus:border-lime-500 focus:bg-slate-900 focus:shadow-lg focus:shadow-lime-500/20">
+                </div>
+                
+                <!-- Search Results -->
+                <div id="search-results-container" class="max-h-[50vh] overflow-y-auto content-scrollbar pr-2 space-y-3">
+                    <p id="search-no-results" class="text-slate-400 text-center italic py-8">Start typing to see results...</p>
+                    <!-- Search results will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ===== NEW: How It Works Modal ("Out of the Box") ===== -->
+    <div id="howModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-70 p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div id="howModalContent" class="modal-content dark-modal-content text-slate-100 w-full max-w-3xl p-0 rounded-xl shadow-2xl transform transition-all duration-300 scale-95 opacity-0 border border-slate-700 overflow-hidden">
+            <!-- Modal Elements -->
+            <div class="scanline"></div>
+            <div class="corner-bracket top-left"></div>
+            <div class="corner-bracket top-right"></div>
+            <div class="corner-bracket bottom-left"></div>
+            <div class="corner-bracket bottom-right"></div>
+
+            <!-- Close Button -->
+            <button class="close-modal-btn absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition-colors duration-200 z-20">
+                <i data-lucide="x" class="w-7 h-7"></i>
+            </button>
+            
+            <div class="p-6 sm:p-8 z-10 relative">
+                <!-- Modal Header -->
+                <h2 class="text-3xl font-bold text-white mb-12 text-center text-glow-lime">How It Works</h2>
+                
+                <!-- "Out of the Box" Flowchart -->
+                <div class="flowchart-container">
+                    <!-- Step 1: Report -->
+                    <div class="flowchart-step">
+                        <div class="flowchart-icon icon-report">
+                            <i data-lucide="clipboard-list" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">1. Report</h3>
+                        <p class="text-sm text-slate-400">Upload an image and let our AI help fill in the details of your item.</p>
+                    </div>
+                    
+                    <div class="flowchart-line"></div>
+                    
+                    <!-- Step 2: Match -->
+                    <div class="flowchart-step">
+                        <div class="flowchart-icon icon-match">
+                            <i data-lucide="brain-circuit" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">2. Match</h3>
+                        <p class="text-sm text-slate-400">Our system scans for matches and notifies you of potential claims.</p>
+                    </div>
+                    
+                    <div class="flowchart-line"></div>
+                    
+                    <!-- Step 3: Review -->
+                    <div class="flowchart-step">
+                        <div class="flowchart-icon icon-review">
+                            <i data-lucide="shield-check" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">3. Review</h3>
+                        <p class="text-sm text-slate-400">As an owner, you must review and approve claims to ensure security.</p>
+                    </div>
+                    
+                    <div class="flowchart-line"></div>
+                    
+                    <!-- Step 4: Connect -->
+                    <div class="flowchart-step">
+                        <div class="flowchart-icon icon-connect">
+                            <i data-lucide="handshake" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">4. Connect</h3>
+                        <p class="text-sm text-slate-400">Once approved, users are connected to arrange the return.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ===== Auth Modal (Dark) ===== -->
+    <div id="authModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-70 p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div id="authModalContent" class="modal-content dark-modal-content text-slate-100 w-full max-w-md p-0 rounded-xl shadow-2xl transform transition-all duration-300 scale-95 opacity-0 border border-slate-700 overflow-hidden">
+            <!-- Modal Elements -->
+            <div class="scanline"></div>
+            <div class="corner-bracket top-left"></div>
+            <div class="corner-bracket top-right"></div>
+            <div class="corner-bracket bottom-left"></div>
+            <div class="corner-bracket bottom-right"></div>
+
+            <!-- Close Button -->
+            <button class="close-modal-btn auth-close-btn absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition-colors duration-200 z-20 hidden">
+                <i data-lucide="x" class="w-7 h-7"></i>
+            </button>
+            
+            <div class="p-6 sm:p-8 z-10 relative">
+                <!-- Choice Panel -->
+                <div id="auth-panel-choice" class="block">
+                    <h2 class="text-3xl font-bold text-white mb-8 text-center text-glow-lime">Access Hub</h2>
+                    <div class="space-y-6">
+                        <button id="auth-btn-login" class="auth-choice-btn login">
+                            <i data-lucide="log-in" class="inline-block w-6 h-6 mr-2"></i>
+                            Login
+                        </button>
+                        <button id="auth-btn-register" class="auth-choice-btn register">
+                            <i data-lucide="user-plus" class="inline-block w-6 h-6 mr-2"></i>
+                            Register
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Login Panel -->
+                <div id="auth-panel-login" class="hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-white">Welcome Back</h2>
+                        <button class="auth-back-btn">
+                            <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>
+                            Back
+                        </button>
+                    </div>
+                    <!-- "Out of the Box" Form -->
+                    <form id="login-form" class="space-y-8 mt-8">
+                        <div class="floating-label-group">
+                            <input type="text" id="login-email" class="floating-input" placeholder=" " required>
+                            <label for="login-email" class="floating-label">Email, USN, or 'admin'</label>
+                        </div>
+                        <div class="floating-label-group">
+                            <input type="password" id="login-pass" class="floating-input" placeholder=" " required>
+                            <label for="login-pass" class="floating-label">Password</label>
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" class="w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-black bg-lime-500 hover:bg-lime-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 transition-all duration-200">
+                                Login
+                            </button>
+                        </div>
+                        <p id="login-error" class="text-red-400 text-sm text-center hidden"></p>
+                    </form>
+                </div>
+                
+                <!-- Register Panel -->
+                <div id="auth-panel-register" class="hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-white">Create Account</h2>
+                        <button class="auth-back-btn">
+                            <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>
+                            Back
+                        </button>
+                    </div>
+                    <!-- "Out of the Box" Form -->
+                    <form id="register-form" class="space-y-6 mt-8">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-8">
+                            <div class="floating-label-group">
+                                <input type="text" id="reg-username" name="username" class="floating-input" placeholder=" " required>
+                                <label for="reg-username" class="floating-label">Username</label>
+                            </div>
+                            <div class="floating-label-group">
+                                <input type="email" id="reg-email" name="email" class="floating-input" placeholder=" " required>
+                                <label for="reg-email" class="floating-label">Email</label>
+                            </div>
+                            <div class="floating-label-group">
+                                <input type="password" id="reg-pass" name="password" class="floating-input" placeholder=" " required>
+                                <label for="reg-pass" class="floating-label">Password</label>
+                            </div>
+                            <div class="floating-label-group">
+                                <input type="tel" id="reg-mobile" name="mobile" class="floating-input" placeholder=" " required pattern="[0-9]{10}">
+                                <label for="reg-mobile" class="floating-label">Mobile (10 digits)</label>
+                            </div>
+                            <div class="floating-label-group">
+                                <input type="text" id="reg-usn" name="usn" class="floating-input" placeholder=" " required>
+                                <label for="reg-usn" class="floating-label">USN</label>
+                            </div>
+                            <div class="floating-label-group">
+                                <select id="reg-sem" name="semester" class="floating-select" required value="">
+                                    <option value="" disabled selected></option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                </select>
+                                <label for="reg-sem" class="floating-label">Semester</label>
+                            </div>
+                        </div>
+                        <div class="floating-label-group pt-2">
+                             <select id="reg-branch" name="branch" class="floating-select" required value="">
+                                <option value="" disabled selected></option>
+                                <option value="CSE">Computer Science & Engineering</option>
+                                <option value="ISE">Information Science & Engineering</option>
+                                <option value="ECE">Electronics & Communication</option>
+                                <option value="MECH">Mechanical Engineering</option>
+                                <option value="CIVIL">Civil Engineering</option>
+                                <option value="EEE">Electrical & Electronics</option>
+                                <option value="AERO">Aerospace Engineering</option>
+                                <option value="BT">Biotechnology</option>
+                            </select>
+                            <label for="reg-branch" class="floating-label">Branch</label>
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" class="w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-black bg-lime-500 hover:bg-lime-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 transition-all duration-200">
+                                Register
+                            </button>
+                        </div>
+                        <p id="register-error" class="text-red-400 text-sm text-center hidden"></p>
+                    </form>
+                </div>
+                
+                <!-- Welcome Panel -->
+                <div id="auth-panel-welcome" class="hidden">
+                    <div class="text-center py-12">
+                        <i data-lucide="check-circle" class="w-20 h-20 text-lime-400 mx-auto text-glow-lime"></i>
+                        <h2 class="text-3xl font-bold text-white mt-6">Access Granted!</h2>
+                        <p class="text-xl text-slate-300 mt-2">Welcome, <span id="welcome-username" class="font-bold text-lime-400">User</span></p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <!-- ===== Profile Modal (Dark) ===== -->
+    <div id="profileModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-70 p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div id="profileModalContent" class="modal-content dark-modal-content text-slate-100 w-full max-w-lg p-0 rounded-xl shadow-2xl transform transition-all duration-300 scale-95 opacity-0 border border-slate-700 overflow-hidden">
+            <!-- Modal Elements -->
+            <div class="scanline"></div>
+            <div class="corner-bracket top-left"></div>
+            <div class="corner-bracket top-right"></div>
+            <div class="corner-bracket bottom-left"></div>
+            <div class="corner-bracket bottom-right"></div>
+
+            <!-- Close Button -->
+            <button class="close-modal-btn absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition-colors duration-200 z-20">
+                <i data-lucide="x" class="w-7 h-7"></i>
+            </button>
+            
+            <div class="p-6 sm:p-8 z-10 relative">
+                <h2 class="text-3xl font-bold text-white mb-8 text-center text-glow-lime">My Profile</h2>
+                
+                <!-- Profile Pic Section -->
+                <div class="flex flex-col items-center space-y-4 mb-8">
+                    <div id="profile-pic-display" class="profile-pic" style="background-image: none;">
+                        <i data-lucide="user" class="w-12 h-12"></i>
+                    </div>
+                    <!-- File Upload Button -->
+                    <input type="file" id="pfp-upload-input" class="hidden" accept="image/*">
+                    <button id="upload-pfp-btn" class="w-full max-w-sm px-4 py-2 bg-lime-500 text-black rounded-md text-sm font-semibold hover:bg-lime-400 transition-colors flex items-center justify-center space-x-2">
+                        <i data-lucide="upload" class="w-4 h-4"></i>
+                        <span>Upload Picture</span>
+                    </button>
+                </div>
+
+                <!-- Profile Info Section -->
+                <div class="space-y-2 mb-8">
+                    <div class="profile-info-item">
+                        <span class="profile-info-label">Username</span>
+                        <span id="profile-username" class="profile-info-value">-</span>
+                    </div>
+                    <div class="profile-info-item">
+                        <span class="profile-info-label">Email</span>
+                        <span id="profile-email" class="profile-info-value">-</span>
+                    </div>
+                    <div class="profile-info-item">
+                        <span class="profile-info-label">USN</span>
+                        <span id="profile-usn" class="profile-info-value">-</span>
+                    </div>
+                    <div class="profile-info-item">
+                        <span class="profile-info-label">Branch</span>
+                        <span id="profile-branch" class="profile-info-value">-</span>
+                    </div>
+                    <div class="profile-info-item">
+                        <span class="profile-info-label">Semester</span>
+                        <span id="profile-sem" class="profile-info-value">-</span>
+                    </div>
+                    <div class="profile-info-item">
+                        <span class="profile-info-label">Mobile</span>
+                        <span id="profile-mobile" class="profile-info-value">-</span>
+                    </div>
+                </div>
+                
+                <!-- Logout Button -->
+                <button id="logout-button" class="w-full flex items-center justify-center px-6 py-3 border border-amber-500 text-amber-400 font-medium rounded-md hover:bg-amber-500 hover:text-black transition-all duration-300">
+                    <i data-lucide="log-out" class="w-5 h-5 mr-2"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ===== NEW: Admin Panel Modal (This is a duplicate from the main content, can be removed if not needed) ===== -->
+    <!-- This modal is here if you want to open the admin panel as a modal instead of a main content panel -->
+    <!-- You can keep it or remove it. The nav button currently points to the main content panel. -->
+    
+    <!-- Link to the external JavaScript file -->
+    <script src="script.js" type="module"></script>
+</body>
+</html>
+
