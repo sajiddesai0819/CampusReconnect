@@ -801,3 +801,11 @@ input[name="item-status"]:checked + label.found {
         height: 280px;
     }
 }
+
+/* Tactile Active Pressed States for Snappier Click/Tap feeling */
+.nav-button:active, 
+.claim-item-btn:active, 
+button:active {
+    transform: scale(0.96) !important;
+    transition: transform 0.05s ease-out !important;
+}

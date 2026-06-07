@@ -133,11 +133,18 @@ function animateBg() {
     requestAnimationFrame(animateBg);
 }
 
-if (bgCanvas) {
+if (bgCanvas && window.innerWidth >= 768) {
     setBgCanvasSize();
     initParticles();
     animateBg();
-    window.addEventListener('resize', () => { setBgCanvasSize(); initParticles(); });
+    window.addEventListener('resize', () => { 
+        if (window.innerWidth >= 768) {
+            setBgCanvasSize(); 
+            initParticles(); 
+        } else {
+            if (bgCtx) bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+        }
+    });
 }
 
 
@@ -219,13 +226,27 @@ function initThree() {
     animateThree();
 }
 
+let threeAnimationId = null;
+
 function animateThree() {
-    requestAnimationFrame(animateThree);
+    threeAnimationId = requestAnimationFrame(animateThree);
     if (orb) {
         orb.rotation.x += 0.001;
         orb.rotation.y += 0.002;
     }
     if (renderer) renderer.render(scene, camera);
+}
+
+function startThreeAnimation() {
+    if (!threeInitialized || threeAnimationId) return;
+    animateThree();
+}
+
+function stopThreeAnimation() {
+    if (threeAnimationId) {
+        cancelAnimationFrame(threeAnimationId);
+        threeAnimationId = null;
+    }
 }
 
 // Handle Resize
@@ -290,11 +311,17 @@ navButtons.forEach(button => {
             targetPanel.classList.add('active');
         }
         
-        // Lazy-load the 3D orb when Home is clicked
-        if (targetPanelId === 'homePanel' && !threeInitialized) {
-            initThree();
-            onWindowResize();
-            threeInitialized = true;
+        // Handle 3D orb rendering play/pause
+        if (targetPanelId === 'homePanel') {
+            if (!threeInitialized) {
+                initThree();
+                onWindowResize();
+                threeInitialized = true;
+            } else {
+                startThreeAnimation();
+            }
+        } else {
+            stopThreeAnimation();
         }
         
         // Refresh data when switching to a panel
@@ -470,6 +497,11 @@ async function renderHomeStats() {
     const activityFeedContainer = document.getElementById('activity-feed');
     
     if (!statsLost || !statsFound || !activityFeedContainer) return;
+
+    // Show loading state
+    statsLost.innerHTML = '<span class="text-2xl font-normal text-slate-500">...</span>';
+    statsFound.innerHTML = '<span class="text-2xl font-normal text-slate-500">...</span>';
+    activityFeedContainer.innerHTML = '<div class="spinner w-8 h-8 mx-auto my-12"></div>';
 
     try {
         const stats = await apiFetch('/items/stats');
