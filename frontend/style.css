@@ -787,6 +787,46 @@ input[name="item-status"]:checked + label.found {
         overflow-y: auto !important;
     }
 
+    /* Decrease padding inside modal contents on mobile to maximize space */
+    .modal-content > div.p-6,
+    .modal-content > div.p-8,
+    .modal-content .p-6,
+    .modal-content .p-8 {
+        padding: 1.25rem 1rem !important;
+    }
+
+    /* Sticky close buttons so they remain accessible when scrolling form fields */
+    .close-modal-btn {
+        position: sticky !important;
+        top: 1rem !important;
+        float: right !important;
+        margin-top: -0.5rem !important;
+        margin-right: -0.5rem !important;
+        z-index: 50 !important;
+    }
+
+    /* Scale up card image heights on mobile 1-column layout to prevent ultra-wide distortion */
+    .item-card-image {
+        height: 180px !important;
+    }
+
+    /* Shrink connection hub circles and elements to prevent overlapping on mobile */
+    #claimModal .profile-pic {
+        width: 64px !important;
+        height: 64px !important;
+        border-width: 2px !important;
+    }
+    #claimModal .profile-pic i {
+        width: 24px !important;
+        height: 24px !important;
+    }
+    #claimModal .connection-line {
+        margin: 0 0.25rem !important;
+    }
+    #claimModal .text-sm {
+        font-size: 0.75rem !important;
+    }
+
     /* Align stats nicely on mobile */
     #homePanel .grid-cols-2 {
         gap: 1rem;
@@ -796,8 +836,9 @@ input[name="item-status"]:checked + label.found {
         padding: 1rem;
     }
 
+    /* Keep stats numbers small enough for double/triple digit counts on mobile */
     #homePanel .text-6xl {
-        font-size: 3.5rem;
+        font-size: 2.5rem !important;
     }
 
     /* Adjust live feed activity container height on mobile so it fits screen */
