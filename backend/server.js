@@ -563,61 +563,54 @@ app.post('/api/ai/analyze-image', authenticateToken, async (req, res) => {
             return res.status(500).json({ message: 'Hugging Face Token not configured' });
         }
 
-        const hf = new HfInference(hfToken);
+        console.log("Analyzing image using Salesforce/blip-image-captioning-large model...");
         
-        // Prompt optimized for JSON structure
-        const prompt = `
-            Analyze this image and return a VALID JSON object (no markdown, no backticks).
-            Structure:
-            {
-                "itemName": "Concise Name (max 4 words)",
-                "description": "Detailed description of appearance, brand, condition, and unique features."
-            }
-        `;
-
-        // Using Qwen2.5-VL-7B-Instruct (Explicitly allowed in your error log)
-        const result = await hf.chatCompletion({
-            model: "Qwen/Qwen2.5-VL-7B-Instruct", 
-            messages: [
-                {
-                    role: "user",
-                    content: [
-                        { type: "text", text: prompt },
-                        { type: "image_url", image_url: { url: `data:image/jpeg;base64,${image}` } }
-                    ]
-                }
-            ],
-            max_tokens: 300,
-            temperature: 0.1
+        const response = await fetch("https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-large", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${hfToken}`
+            },
+            body: Buffer.from(image, 'base64')
         });
 
-        if (result.choices && result.choices[0] && result.choices[0].message) {
-            const content = result.choices[0].message.content;
+        if (!response.ok) {
+            const errBody = await response.text();
+            throw new Error(`Hugging Face API returned status ${response.status}: ${errBody}`);
+        }
+
+        const result = await response.json();
+        
+        if (result && result[0] && result[0].generated_text) {
+            const caption = result[0].generated_text;
+            console.log("Image analyzed successfully! Caption:", caption);
             
-            // Clean and parse JSON
-            try {
-                const cleanJson = content.replace(/```json/g, '').replace(/```/g, '').trim();
-                const parsed = JSON.parse(cleanJson);
-                
-                res.status(200).json({
-                    itemName: parsed.itemName || "Analyzed Item",
-                    description: parsed.description || "Description unavailable"
-                });
-            } catch (e) {
-                console.error("JSON Parse failed, using raw text");
-                // Fallback if model refused JSON format
-                res.status(200).json({
-                    itemName: "Item Detected",
-                    description: content
-                });
-            }
+            // Clean up the caption to form a nice item title
+            // E.g., "a black leather wallet on a table" -> "Black Leather Wallet"
+            let itemName = caption
+                .replace(/^(a|an|the)\s+/i, '') // Remove starting articles
+                .replace(/\s+on\s+.*$/i, '')     // Remove "on ..."
+                .replace(/\s+in\s+.*$/i, '')     // Remove "in ..."
+                .replace(/\s+with\s+.*$/i, '')   // Remove "with ..."
+                .trim();
+            
+            // Capitalize first letter of each word
+            itemName = itemName.split(' ')
+                .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(' ');
+
+            // Ensure itemName has a maximum of 4 words
+            itemName = itemName.split(' ').slice(0, 4).join(' ');
+
+            res.status(200).json({
+                itemName: itemName || "Detected Item",
+                description: `A photo of a ${caption}.`
+            });
         } else {
-            throw new Error("Invalid response from Hugging Face");
+            throw new Error("No caption generated in response");
         }
 
     } catch (error) {
         console.error('AI analysis error:', error);
-        // Fallback if HF fails
         res.status(500).json({ message: `AI Analysis failed: ${error.message}` });
     }
 });
