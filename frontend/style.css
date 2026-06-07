@@ -703,33 +703,26 @@ input[name="item-status"]:checked + label.found {
         z-index: 50;
     }
 
-    /* Style the flex containers inside the bottom navigation bar */
+    /* Make sub-containers invisible in layout so all buttons align directly in the parent flex */
     #nav-rail > div {
-        flex-direction: row !important;
-        align-items: center;
-        justify-content: space-around;
-        width: auto;
-        margin: 0 !important;
-        padding: 0 !important;
-        gap: 0.5rem;
-    }
-
-    /* Override vertical margins applied by Tailwind space-y on nav items */
-    #nav-rail > div > * + *,
-    #nav-rail > div.mt-auto > * + * {
-        margin-top: 0 !important;
-    }
-
-    /* Make the bottom/top buttons section layout inline too */
-    #nav-rail > div.mt-auto {
-        margin-top: 0 !important;
-        margin-bottom: 0 !important;
-        flex-direction: row !important;
+        display: contents !important;
     }
 
     /* Hide the tooltip on mobile screens */
     .nav-button .tooltip {
         display: none !important;
+    }
+
+    /* Hide specific buttons from the bottom bar to keep it uncluttered */
+    #nav-reports, 
+    #nav-admin, 
+    #nav-how {
+        display: none !important;
+    }
+
+    /* Disable pointer interactions on the 3D Orb to allow swiping to scroll naturally */
+    #three-canvas {
+        pointer-events: none !important;
     }
 
     /* Hide the vertical rail divider line */

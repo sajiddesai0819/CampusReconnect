@@ -1009,6 +1009,20 @@ function logoutUser() {
 
 document.getElementById('logout-button').addEventListener('click', logoutUser);
 
+// Wire up mobile shortcuts in profile modal
+document.getElementById('profile-btn-reports').addEventListener('click', () => {
+    closeModal('profileModal');
+    document.getElementById('nav-reports').click();
+});
+document.getElementById('profile-btn-admin').addEventListener('click', () => {
+    closeModal('profileModal');
+    document.getElementById('nav-admin').click();
+});
+document.getElementById('profile-btn-how').addEventListener('click', () => {
+    closeModal('profileModal');
+    openModal('howModal');
+});
+
 // Update UI based on auth state
 function updateAuthState() {
     const navProfileBtn = document.getElementById('nav-profile');
@@ -1022,6 +1036,9 @@ function updateAuthState() {
     const newNavProfileBtn = navProfileBtn.cloneNode(true);
     newNavProfileBtn.id = 'nav-profile'; 
     navProfileBtn.parentNode.replaceChild(newNavProfileBtn, navProfileBtn);
+    
+    const profileBtnReports = document.getElementById('profile-btn-reports');
+    const profileBtnAdmin = document.getElementById('profile-btn-admin');
     
     if (token) {
         // Logged IN
@@ -1039,12 +1056,15 @@ function updateAuthState() {
         if (isAdmin) {
             navAdminBtn.classList.remove('hidden');
             newNavProfileBtn.innerHTML = `<i data-lucide="user-check" class="w-6 h-6 text-red-400"></i><span class="tooltip">Admin Profile</span>`;
+            if (profileBtnAdmin) profileBtnAdmin.classList.remove('hidden');
         } else {
             navAdminBtn.classList.add('hidden');
             newNavProfileBtn.innerHTML = `<i data-lucide="user-check" class="w-6 h-6 text-lime-400"></i><span class="tooltip">My Profile</span>`;
+            if (profileBtnAdmin) profileBtnAdmin.classList.add('hidden');
         }
         newNavProfileBtn.addEventListener('click', () => openModal('profileModal'));
         navReportsBtn.classList.remove('hidden'); // Show "My Reports"
+        if (profileBtnReports) profileBtnReports.classList.remove('hidden');
         
     } else {
         // Logged OUT
@@ -1052,6 +1072,8 @@ function updateAuthState() {
         navReportsBtn.classList.add('hidden'); // Hide "My Reports"
         newNavProfileBtn.innerHTML = `<i data-lucide="user" class="w-6 h-6"></i><span class="tooltip">Login / Register</span>`;
         newNavProfileBtn.addEventListener('click', () => openModal('authModal'));
+        if (profileBtnReports) profileBtnReports.classList.add('hidden');
+        if (profileBtnAdmin) profileBtnAdmin.classList.add('hidden');
     }
     lucide.createIcons();
     
